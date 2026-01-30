@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Katalog Racun Shopee | Cuan Affiliate</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --shopee: #ee4d2d; --bg: #f5f5f5; --text: #333; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding-bottom: 50px; }
+        
+        /* Header */
+        header { background: var(--shopee); color: white; padding: 30px 20px; text-align: center; border-radius: 0 0 25px 25px; position: sticky; top: 0; z-index: 1000; box-shadow: 0 4px 12px rgba(238, 77, 45, 0.3); }
+        header h1 { margin: 0; font-size: 24px; font-weight: 800; }
+        header p { margin: 5px 0 0; font-size: 13px; opacity: 0.9; }
+
+        .container { padding: 15px; max-width: 600px; margin: auto; }
+
+        /* Search Bar */
+        .search-box { width: 100%; padding: 15px 20px; border-radius: 12px; border: none; margin-top: -25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); font-size: 15px; outline: none; box-sizing: border-box; }
+
+        /* Kategori */
+        .category-scroll { display: flex; overflow-x: auto; gap: 10px; padding: 20px 0 10px; scrollbar-width: none; }
+        .category-scroll::-webkit-scrollbar { display: none; }
+        .cat-item { background: white; padding: 8px 18px; border-radius: 20px; font-size: 13px; font-weight: 600; white-space: nowrap; border: 1px solid #ddd; cursor: pointer; transition: 0.3s; }
+        .cat-item.active { background: var(--shopee); color: white; border-color: var(--shopee); }
+
+        /* Grid Produk */
+        .product-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px; }
+        .card { background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.05); display: flex; flex-direction: column; transition: 0.3s; text-decoration: none; color: inherit; }
+        .card:active { transform: scale(0.95); }
+        .card img { width: 100%; aspect-ratio: 1/1; object-fit: cover; background: #f9f9f9; }
+        .card-info { padding: 12px; flex-grow: 1; display: flex; flex-direction: column; }
+        .card-title { font-size: 13px; font-weight: 600; line-height: 1.4; height: 36px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; margin-bottom: 8px; }
+        .card-price { color: var(--shopee); font-size: 16px; font-weight: 800; margin-bottom: 10px; }
+        .btn-buy { background: var(--shopee); color: white; text-align: center; padding: 8px; border-radius: 8px; font-size: 12px; font-weight: 700; text-transform: uppercase; }
+
+        #loader { text-align: center; padding: 50px; color: var(--shopee); font-weight: 600; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>RACUN SHOPEE 🔥</h1>
+    <p>Rekomendasi Produk Terbaik Setiap Hari</p>
+</header>
+
+<div class="container">
+    <input type="text" id="searchInput" class="search-box" placeholder="Cari barang impianmu..." onkeyup="filterProduk()">
+
+    <div class="category-scroll" id="catMenu">
+        <div class="cat-item active" onclick="filterKategori('Semua', this)">Semua</div>
+        <div class="cat-item" onclick="filterKategori('Sepatu', this)">Sepatu</div>
+        <div class="cat-item" onclick="filterKategori('Baju', this)">Baju</div>
+        <div class="cat-item" onclick="filterKategori('Elektronik', this)">Elektronik</div>
+        <div class="cat-item" onclick="filterKategori('Skincare', this)">Skincare</div>
+    </div>
+
+    <div id="loader">Sedang memuat produk...</div>
+    <div class="product-grid" id="productGrid"></div>
+</div>
+
+<script>
+    // 1. LINK CSV GOOGLE SHEETS BOS
+    const sheetUrl = 'GANTI_DENGAN_LINK_CSV_BOS';
+    
+    let database = [];
+
+    // 2. Ambil Data
+    Papa.parse(sheetUrl, {
+        download: true,
+        header: true,
+        complete: function(results) {
+            database = results.data.filter(row => row.Nama); // Hanya ambil baris yang ada namanya
+            renderData(database);
+            document.getElementById('loader').style.display = 'none';
+        }
+    });
+
+    // 3. Fungsi Tampil Data
+    function renderData(data) {
+        const grid = document.getElementById('productGrid');
+        grid.innerHTML = data.map(p => `
+            <a href="${p.Link}" target="_blank" class="card">
+                <img src="${p.Gambar || 'https://via.placeholder.com/300x300?text=No+Image'}" alt="produk">
+                <div class="card-info">
+                    <div class="card-title">${p.Nama}</div>
+                    <div class="card-price">Rp ${p.Harga}</div>
+                    <div class="btn-buy">Beli Sekarang</div>
+                </div>
+            </a>
+        `).join('');
+    }
+
+    // 4. Fungsi Search
+    function filterProduk() {
+        let keyword = document.getElementById('searchInput').value.toLowerCase();
+        let hasil = database.filter(p => p.Nama.toLowerCase().includes(keyword));
+        renderData(hasil);
+    }
+
+    // 5. Fungsi Filter Kategori
+    function filterKategori(kat, el) {
+        // Atur warna tombol aktif
+        document.querySelectorAll('.cat-item').forEach(i => i.classList.remove('active'));
+        el.classList.add('active');
+
+        // Filter datanya
+        if(kat === 'Semua') {
+            renderData(database);
+        } else {
+            let hasil = database.filter(p => p.Kategori === kat);
+            renderData(hasil);
+        }
+    }
+</script>
+
+</body>
+</html>
